@@ -58,7 +58,7 @@ func doMap(
 	//
 	file, err := os.Open(inFile)
 	if err == nil {
-		fmt.Println("file:%s opened\n", inFile)
+		fmt.Printf("file:%s opened\n", inFile)
 	} else {
 		fmt.Print(err)
 	}
@@ -69,9 +69,30 @@ func doMap(
 	file.Close()
 
 	kv := mapF(inFile, string(contents))
-	filesenc := make([]*json.Encode, nReduce)
+	filesenc := make([]*json.Encoder, nReduce)
 	files := make([]*os.File, nReduce)
-	fmt.Println(kv)
+
+	for i := range filesenc {
+		filename := reduceName(jobName, mapTaskNumber, i)
+		file, err := os.Create(filename)
+		if err != nil {
+			fmt.Printf("%s Create Failed\n", filename)
+		} else {
+			filesenc[i] = json.NewEncoder(file)
+			files[i] = file
+		}
+	}
+
+	for _, v := range kv {
+		err := filesenc[ihash(v.Key) % nReduce].Encode(&v)
+		if err != nil {
+			fmt.Printf("%s Encode Failed %v\n", v, err)
+		}
+	}
+
+	for _, f := range files {
+		f.Close()
+	}
 }
 
 func ihash(s string) int {
