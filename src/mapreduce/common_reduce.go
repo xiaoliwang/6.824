@@ -90,4 +90,6 @@ func doReduce(
 		enc.Encode(KeyValue{k, reduceF(k, keyValues[k])})
 	}
 	file.Close()
+
+	fmt.Printf("reduce %d finished\n", reduceTaskNumber)
 }

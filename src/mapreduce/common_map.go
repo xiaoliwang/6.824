@@ -74,6 +74,7 @@ func doMap(
 
 	for i := range filesenc {
 		filename := reduceName(jobName, mapTaskNumber, i)
+        fmt.Printf("file:%s created\n", filename)
 		file, err := os.Create(filename)
 		if err != nil {
 			fmt.Printf("%s Create Failed\n", filename)
@@ -93,6 +94,8 @@ func doMap(
 	for _, f := range files {
 		f.Close()
 	}
+
+    fmt.Printf("map %d finished\n", mapTaskNumber)
 }
 
 func ihash(s string) int {
