@@ -2,9 +2,10 @@ package mapreduce
 
 import (
 	"hash/fnv"
-	"fmt"
-	"os"
+	"io/ioutil"
 	"encoding/json"
+	"os"
+	"log"
 )
 
 // doMap manages one map task: it reads one of the input files
@@ -56,46 +57,35 @@ func doMap(
 	//
 	// Remember to close the file after you have written all the values!
 	//
-	file, err := os.Open(inFile)
-	if err == nil {
-		fmt.Printf("file:%s opened\n", inFile)
-	} else {
-		fmt.Print(err)
-	}
-	inf, err := file.Stat()
 
-	contents := make([]byte, inf.Size())
-	file.Read(contents)
-	file.Close()
+
+	contents, err := ioutil.ReadFile(inFile)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
 
 	kv := mapF(inFile, string(contents))
 	filesenc := make([]*json.Encoder, nReduce)
-	files := make([]*os.File, nReduce)
 
 	for i := range filesenc {
 		filename := reduceName(jobName, mapTaskNumber, i)
-        fmt.Printf("file:%s created\n", filename)
 		file, err := os.Create(filename)
+		defer file.Close()
 		if err != nil {
-			fmt.Printf("%s Create Failed\n", filename)
-		} else {
-			filesenc[i] = json.NewEncoder(file)
-			files[i] = file
+			log.Fatal(err)
+			os.Exit(1)
 		}
+		filesenc[i] = json.NewEncoder(file)
 	}
 
 	for _, v := range kv {
 		err := filesenc[ihash(v.Key) % nReduce].Encode(&v)
 		if err != nil {
-			fmt.Printf("%s Encode Failed %v\n", v, err)
+			log.Fatal(err)
+			os.Exit(1)
 		}
 	}
-
-	for _, f := range files {
-		f.Close()
-	}
-
-    fmt.Printf("map %d finished\n", mapTaskNumber)
 }
 
 func ihash(s string) int {

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"../mapreduce"
 	"os"
 	"strings"
 	"unicode"
 	"strconv"
+	"github.com/6.824/src/mapreduce"
+	"fmt"
 )
 
 //
